@@ -10,7 +10,7 @@ body {
     font-family   : 'Courier New', Courier, monospace;
 }
 
-body div.app-div {
+div.app-div {
     margin         : 0 auto;
     display        : flex;
     align-items    : center;
@@ -25,14 +25,20 @@ body div.app-div {
     background    : #fff;
 }
 
-.queries {
-    color          : #fff !important;
-    justify-content: right !important;
-    width          : 80%;
-    font-size      : 0.8em;
+div.app-div input {
+    width: 100px;
 }
 
-.queries>a {
+.queries {
+    color          : #fff !important;
+    /* justify-content: right !important; */
+    width          : 80%;
+    font-size      : 0.8em;
+    flex-flow: column;
+    align-items: flex-end !important;
+}
+
+.queries a {
     color: #c1ffd7;
 }
 
@@ -42,9 +48,9 @@ body div.app-div {
 }
 
 .row {
-    display: flex;
     flex   : 100%;
     width  : 50%;
+    padding: 5px;
 }
 
 .column {
@@ -52,7 +58,9 @@ body div.app-div {
 }
 
 .column-1 {
-    justify-content: left !important;
+    /* justify-content: left !important; */
+    flex-flow: column;
+    align-items: flex-start !important;
 }
 
 .column-2 {
@@ -61,7 +69,9 @@ body div.app-div {
 
 
 .column-3 {
-    justify-content: right !important;
+    /* justify-content: right !important; */
+    flex-flow      : column;
+    align-items    : flex-end !important;
 }
 
 #dropZone {
