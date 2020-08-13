@@ -1,1 +1,1 @@
-# srcc-attendance-compiler
+# MS Teams - Meeting Attendance Compiler
