@@ -17,7 +17,8 @@ function dropHandler(ev) {
     }
 
     if (typeof file !== `undefined`) {
-        if (file.type === `text/csv`) {
+        let fileName = file.name.split(`.`);
+        if (fileName[fileName.length - 1] === `csv`) {
             initCSV(file);
         }
     }
@@ -242,7 +243,8 @@ $(document).ready(function () {
         console.log(data);
         let file = $(data.target)[0].files[0];
         console.log(file);
-        if (file.type === `text/csv`) {
+        let fileName = file.name.split(`.`);
+        if (fileName[fileName.length - 1] === `csv`) {
             initCSV(file);
         }
     });
