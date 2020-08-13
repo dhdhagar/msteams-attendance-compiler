@@ -81,7 +81,11 @@ function readCSV(file) {
             reader.onload = function (event) {
                 let csvContent = event.target.result;
                 console.log(csvContent);
-                let csvObjects = $.csv.toObjects(csvContent);
+                let csvOptions = {};
+                if (csvContent.indexOf(`\t`) > -1) {
+                    csvOptions.separator = `\t`;
+                }
+                let csvObjects = $.csv.toObjects(csvContent, csvOptions);
                 console.log(csvObjects);
                 resolve(csvObjects);
             }
