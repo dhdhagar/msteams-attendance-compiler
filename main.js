@@ -17,7 +17,8 @@ function dropHandler(ev) {
     }
 
     if (typeof file !== `undefined`) {
-        if (file.type === `text/csv`) {
+        let fileName = file.name.split(`.`);
+        if (fileName[fileName.length - 1] === `csv`) {
             initCSV(file);
         }
     }
@@ -62,7 +63,7 @@ function initCSV(file) {
         readCSV(file).then((obj) => {
             analyzeCSV(obj, userInputs).then((results) => {
                 console.log(results);
-                downloadCSV(results);
+                downloadCSV(results, userInputs.startTime);
             }).catch(() => {
                 alert('There was an error. Please check your inputs and try again.');
             });
@@ -198,8 +199,10 @@ function analyzeCSV(data, inputs) {
     });
 }
 
-function downloadCSV(obj) {
+function downloadCSV(obj, startTime) {
     let csvResult = "data:text/csv;charset=utf-8," + $.csv.fromObjects(obj);
+    let classDateTime = new Date(obj[0][`Joining Time`]);
+    let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth()}-${classDateTime.getFullYear()} ${startTime.hours}:${startTime.minutes}.csv`;
     // obj.forEach(function (rowArray) {
     //     let row = rowArray.join(",");
     //     csvResult += row + "\r\n";
@@ -207,7 +210,7 @@ function downloadCSV(obj) {
     encodedUri = encodeURI(csvResult);
     let link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "my_data.csv");
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
 }
@@ -242,8 +245,10 @@ $(document).ready(function () {
         console.log(data);
         let file = $(data.target)[0].files[0];
         console.log(file);
-        if (file.type === `text/csv`) {
+        let fileName = file.name.split(`.`);
+        if (fileName[fileName.length - 1] === `csv`) {
             initCSV(file);
         }
+        $("#csvFile").val("");
     });
 });
