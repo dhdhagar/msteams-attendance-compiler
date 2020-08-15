@@ -15,13 +15,15 @@ div.app-div {
     display        : flex;
     align-items    : center;
     justify-content: center;
+    max-width      : 750px;
 }
 
 .main-section {
     flex-direction: column;
-    width         : 80%;
+    width         : 100%;
+    height        : 500px;
+    min-height    : 500px;
     margin        : 0 auto;
-    height        : 80%;
     background    : #fff;
 }
 
@@ -30,12 +32,12 @@ div.app-div input {
 }
 
 .queries {
-    color          : #fff !important;
+    color             : #fff !important;
     /* justify-content: right !important; */
-    width          : 80%;
-    font-size      : 0.8em;
-    flex-flow: column;
-    align-items: flex-end !important;
+    width             : 100%;
+    font-size         : 0.8em;
+    flex-flow         : column;
+    align-items       : flex-end !important;
 }
 
 .queries a {
@@ -59,7 +61,7 @@ div.app-div input {
 
 .column-1 {
     /* justify-content: left !important; */
-    flex-flow: column;
+    flex-flow  : column;
     align-items: flex-start !important;
 }
 
@@ -70,8 +72,8 @@ div.app-div input {
 
 .column-3 {
     /* justify-content: right !important; */
-    flex-flow      : column;
-    align-items    : flex-end !important;
+    flex-flow  : column;
+    align-items: flex-end !important;
 }
 
 #dropZone {
@@ -79,6 +81,7 @@ div.app-div input {
     width     : 30%;
     cursor    : pointer;
     margin    : 0 auto;
+    margin-top: 30px;
     text-align: center;
 }
 

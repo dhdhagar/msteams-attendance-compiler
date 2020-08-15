@@ -52,11 +52,11 @@ function initCSV(file) {
         endTime: getHoursMins($("#endTimePicker").val()),
         threshold: $("#thresholdPicker").val()
     }
-    
+
     let classDuration = (userInputs.endTime.hours * 60 + userInputs.endTime.minutes) - (userInputs.startTime.hours * 60 + userInputs.startTime.minutes);
     if (classDuration <= 0) {
         alert('Configuration error. The End Time must be greater than the Start Time.')
-    } else if(userInputs.threshold > classDuration) {
+    } else if (userInputs.threshold > classDuration) {
         alert('Configuration error. The Attendance Requirement cannot be greater than the class duration.')
     } else {
         readCSV(file).then((obj) => {
