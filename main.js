@@ -118,7 +118,19 @@ function analyzeCSV(data, inputs) {
 
             let resultCSV = [];
 
-            data.forEach(function (row) {
+            let arrLen = data.length;
+
+            function pushToResults() {
+                duration += (endTime - startTime) / (1000 * 60);
+                resultCSV.push({
+                    'Name': prevName,
+                    'Joining Time': joiningTime.toLocaleString(),
+                    'Minutes Attended': Math.ceil(duration),
+                    'Attendance': (Math.ceil(duration) >= attendanceThreshold) ? 'P' : 'A'
+                });
+            }
+
+            data.forEach(function (row, idx) {
                 rowFullName = row[`Full Name`];
                 rowUserAction = row[`User Action`];
                 rowTimestamp = row[`Timestamp`];
@@ -135,13 +147,7 @@ function analyzeCSV(data, inputs) {
                         if (!skipRecord) {
                             if (!firstStudent) {
                                 // Store attendance for the previous student in the result
-                                duration += (endTime - startTime) / (1000 * 60)
-                                resultCSV.push({
-                                    'Name': prevName,
-                                    'Joining Time': joiningTime.toLocaleString(),
-                                    'Minutes Attended': Math.ceil(duration),
-                                    'Attendance': (Math.ceil(duration) >= attendanceThreshold) ? 'P' : 'A'
-                                });
+                                pushToResults();
                             }
 
                             // Reset values
@@ -190,6 +196,11 @@ function analyzeCSV(data, inputs) {
                             }
                         }
                     }
+
+                    if (idx === (arrLen - 1)) {
+                        // Last row
+                        pushToResults();
+                    }
                 }
             });
             resolve(resultCSV);
@@ -202,7 +213,7 @@ function analyzeCSV(data, inputs) {
 function downloadCSV(obj, startTime) {
     let csvResult = "data:text/csv;charset=utf-8," + $.csv.fromObjects(obj);
     let classDateTime = new Date(obj[0][`Joining Time`]);
-    let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth()}-${classDateTime.getFullYear()} ${startTime.hours}:${startTime.minutes}.csv`;
+    let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}:${startTime.minutes}.csv`;
     // obj.forEach(function (rowArray) {
     //     let row = rowArray.join(",");
     //     csvResult += row + "\r\n";
