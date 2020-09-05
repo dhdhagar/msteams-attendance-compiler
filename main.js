@@ -1,34 +1,3 @@
-function dropHandler(ev) {
-    console.log("dropHandler")
-    let file;
-    // Prevent default behavior (Prevent file from being opened)
-    ev.preventDefault();
-
-    if (ev.dataTransfer.items) {
-        // Use DataTransferItemList interface to access the file(s)
-        if (ev.dataTransfer.items[0].kind === 'file') {
-            file = ev.dataTransfer.items[0].getAsFile();
-            console.log(file);
-        }
-    } else {
-        // Use DataTransfer interface to access the file(s)
-        file = ev.dataTransfer.files[0];
-        console.log(file);
-    }
-
-    if (typeof file !== `undefined`) {
-        let fileName = file.name.split(`.`);
-        if (fileName[fileName.length - 1] === `csv`) {
-            initCSV(file);
-        }
-    }
-}
-
-function dragOverHandler(ev) {
-    // Prevent default behavior (Prevent file from being opened)
-    ev.preventDefault();
-}
-
 function getHoursMins(timeString) {
     let split1 = timeString.split(" ");
     let ampm = split1[1];
@@ -47,30 +16,25 @@ function getHoursMins(timeString) {
     return { hours, minutes };
 }
 
-function initCSV(file) {
-    let userInputs = {
-        startTime: getHoursMins($("#startTimePicker").val()),
-        endTime: getHoursMins($("#endTimePicker").val()),
-        threshold: $("#thresholdPicker").val()
-    }
-
-    let classDuration = (userInputs.endTime.hours * 60 + userInputs.endTime.minutes) - (userInputs.startTime.hours * 60 + userInputs.startTime.minutes);
-    if (classDuration <= 0) {
-        alert('Configuration error. The End Time must be greater than the Start Time.')
-    } else if (userInputs.threshold > classDuration) {
-        alert('Configuration error. The Attendance Requirement cannot be greater than the class duration.')
-    } else {
+function initCSV(file, resultsArray, userInputs) {
+    return new Promise(function (resolve, reject) {
         readCSV(file).then((obj) => {
             analyzeCSV(obj, userInputs).then((results) => {
                 console.log(results);
-                downloadCSV(results, userInputs.startTime);
+                resultsArray.push({
+                    results: results,
+                    startTime: userInputs.startTime
+                });
+                resolve();
             }).catch(() => {
                 alert('There was an error. Please check your inputs and try again.');
+                reject();
             });
         }).catch(function () {
             alert('Your browser is not compatible.');
+            reject();
         });
-    }
+    });
 }
 
 function readCSV(file) {
@@ -210,20 +174,44 @@ function analyzeCSV(data, inputs) {
     });
 }
 
-function downloadCSV(obj, startTime) {
-    let csvResult = "data:text/csv;charset=utf-8," + $.csv.fromObjects(obj);
-    let classDateTime = new Date(obj[0][`Joining Time`]);
-    let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}:${startTime.minutes}.csv`;
-    // obj.forEach(function (rowArray) {
-    //     let row = rowArray.join(",");
-    //     csvResult += row + "\r\n";
-    // });
-    encodedUri = encodeURI(csvResult);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
+function downloadCSV(resultsArray) {
+    if (resultsArray.length <= 0) {
+        alert('123There was an error. Please check your inputs and try again.');
+        return;
+    }
+    if (resultsArray.length == 1) {
+        let obj = resultsArray[0].results;
+        let startTime = resultsArray[0].startTime;
+        let csvContent = $.csv.fromObjects(obj);
+        let csvResult = "data:text/csv;charset=utf-8," + csvContent;
+        let classDateTime = new Date(obj[0][`Joining Time`]);
+        let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}.csv`;
+        encodedUri = encodeURI(csvResult);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+    } else {
+        let zip = new JSZip();
+        resultsArray.forEach(el => {
+            let obj = el.results;
+            let startTime = el.startTime;
+
+            let csvContent = $.csv.fromObjects(obj);
+            let classDateTime = new Date(obj[0][`Joining Time`]);
+            let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}.csv`;
+
+            zip.file(fileName, csvContent);
+        });
+        zip.generateAsync({ type: "base64" }).then(function (content) {
+            let link = document.createElement("a");
+            link.setAttribute("href", `data:application/zip;base64,${content}`);
+            link.setAttribute("download", 'msteams-attendance.zip');
+            document.body.appendChild(link);
+            link.click();
+        });
+    }
 }
 
 $(document).ready(function () {
@@ -254,11 +242,41 @@ $(document).ready(function () {
     $("#csvFile").on('change', function (data) {
         console.log('csvFileChange');
         console.log(data);
-        let file = $(data.target)[0].files[0];
-        console.log(file);
-        let fileName = file.name.split(`.`);
-        if (fileName[fileName.length - 1] === `csv`) {
-            initCSV(file);
+        let files = $(data.target)[0].files;
+        // let file = $(data.target)[0].files[0];
+        if (files.length === 0) {
+            alert('Upload error. No files detected.')
+        } else {
+            let userInputs = {
+                startTime: getHoursMins($("#startTimePicker").val()),
+                endTime: getHoursMins($("#endTimePicker").val()),
+                threshold: $("#thresholdPicker").val()
+            }
+
+            let classDuration = (userInputs.endTime.hours * 60 + userInputs.endTime.minutes) - (userInputs.startTime.hours * 60 + userInputs.startTime.minutes);
+            if (classDuration <= 0) {
+                alert('Configuration error. The End Time must be greater than the Start Time.')
+            } else if (userInputs.threshold > classDuration) {
+                alert('Configuration error. The Attendance Requirement cannot be greater than the class duration.')
+            } else {
+                resultsArray = [];
+                filePromises = [];
+                Array.from(files).forEach(file => {
+                    console.log(file);
+                    let fileName = file.name.split(`.`);
+                    if (fileName[fileName.length - 1] === `csv`) {
+                        filePromises.push(initCSV(file, resultsArray, userInputs));
+                    }
+                });
+                if (filePromises.length > 0) {
+                    Promise.all(filePromises).then(() => {
+                        downloadCSV(resultsArray);
+                    });
+                } else {
+                    alert('There was an error. Please check your inputs and try again.')
+                }
+            }
+
         }
         $("#csvFile").val("");
     });
