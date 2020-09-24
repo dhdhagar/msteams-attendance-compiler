@@ -174,9 +174,9 @@ function analyzeCSV(data, inputs) {
     });
 }
 
-function downloadCSV(resultsArray) {
+function downloadCSV(resultsArray, studentNames) {
     if (resultsArray.length <= 0) {
-        alert('123There was an error. Please check your inputs and try again.');
+        alert('There was an error. Please check your inputs and try again.');
         return;
     }
     if (resultsArray.length == 1) {
@@ -194,16 +194,51 @@ function downloadCSV(resultsArray) {
         link.click();
     } else {
         let zip = new JSZip();
+        let classDates = [];
         resultsArray.forEach(el => {
             let obj = el.results;
             let startTime = el.startTime;
-
             let csvContent = $.csv.fromObjects(obj);
             let classDateTime = new Date(obj[0][`Joining Time`]);
-            let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}.csv`;
+            let classDateTimeStr = `${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}`;
+            let fileName = `Attendance ${classDateTimeStr}.csv`;
 
             zip.file(fileName, csvContent);
+
+            if (studentNames !== null) {
+                classDates.push(classDateTime);
+                let dateKey = classDateTimeStr.split(' ')[0];
+                $.each(studentNames, (k, v) => {
+                    v[dateKey] = 'A'; // Initialize attendance with 'Absent'
+                });
+                obj.forEach((o) => {
+                    if (o[`Name`] in studentNames) {
+                        studentNames[o[`Name`]][dateKey] = o[`Attendance`];
+                    }
+                })
+            }
         });
+        if (studentNames !== null) {
+            classDates.sort((a, b) => {
+                return a - b;
+            });
+            classDates = $.map(classDates, (v) => {
+                return `${v.getDate()}-${v.getMonth() + 1}-${v.getFullYear()}`
+            });
+            let sortedStudents = [];
+            Object.keys(studentNames).sort().forEach((k) => {
+                let student = {
+                    'Name': k
+                }
+                classDates.forEach((v) => {
+                    student[v] = studentNames[k][v];
+                });
+                sortedStudents.push(student);
+            });
+            let csvContent = $.csv.fromObjects(sortedStudents);
+            let fileName = `Aggregated Attendance ${classDates[0]} ${classDates[classDates.length - 1]}.csv`;
+            zip.file(fileName, csvContent);
+        }
         zip.generateAsync({ type: "base64" }).then(function (content) {
             let link = document.createElement("a");
             link.setAttribute("href", `data:application/zip;base64,${content}`);
@@ -218,6 +253,7 @@ $(document).ready(function () {
     let defaultStartTime = '8:30';
     let defaultEndTime = '9:30';
     let defaultThreshold = 50;
+    let studentNames = null;
 
     let timepickerOptions = {
         timeFormat: 'h:mm p',
@@ -243,7 +279,6 @@ $(document).ready(function () {
         console.log('csvFileChange');
         console.log(data);
         let files = $(data.target)[0].files;
-        // let file = $(data.target)[0].files[0];
         if (files.length === 0) {
             alert('Upload error. No files detected.')
         } else {
@@ -252,7 +287,6 @@ $(document).ready(function () {
                 endTime: getHoursMins($("#endTimePicker").val()),
                 threshold: $("#thresholdPicker").val()
             }
-
             let classDuration = (userInputs.endTime.hours * 60 + userInputs.endTime.minutes) - (userInputs.startTime.hours * 60 + userInputs.startTime.minutes);
             if (classDuration <= 0) {
                 alert('Configuration error. The End Time must be greater than the Start Time.')
@@ -270,14 +304,41 @@ $(document).ready(function () {
                 });
                 if (filePromises.length > 0) {
                     Promise.all(filePromises).then(() => {
-                        downloadCSV(resultsArray);
+                        downloadCSV(resultsArray, studentNames);
                     });
                 } else {
                     alert('There was an error. Please check your inputs and try again.')
                 }
             }
-
         }
         $("#csvFile").val("");
+    });
+
+    $("#nameFile").on('change', function (data) {
+        console.log('nameFileChange');
+        console.log(data);
+        let file = $(data.target)[0].files[0];
+        console.log(file);
+        let fileName = file.name.split(`.`);
+        if (fileName[fileName.length - 1] === `csv`) {
+            readCSV(file).then((data) => {
+                if (data.length > 0) {
+                    studentNames = {};
+                    data.forEach((v) => {
+                        studentNames[v[`Name`]] = {};
+                    });
+                } else {
+                    alert('There was an error in the uploaded file. Please check your inputs and try again.')
+                }
+            })
+        } else {
+            alert('The uploaded file is not a CSV. Please check your inputs and try again.')
+            $("#clearNameFile").click();
+        }
+    });
+
+    $("#clearNameFile").click(() => {
+        studentNames = null;
+        $("#nameFileForm").trigger("reset");
     });
 });

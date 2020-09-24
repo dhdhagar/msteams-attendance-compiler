@@ -73,8 +73,6 @@
 		}
 	</style>
 
-	<input type="file" id="csvFile" style="display:none" multiple/>
-
 	<div class="app-div main-section">
 		<div class="app-div config-section">
 			<div class="app-div row">
@@ -110,7 +108,19 @@
 					<input type="number" id="thresholdPicker" name="thresholdPicker" min="0" max="120" step="5">
 				</div>
 			</div>
+			<div class="app-div row">
+				<div class="app-div column column-1">
+					Student Names<a id="clearNameFile">Clear</a>
+				</div>
+				<div class="app-div column column-2">
+					:
+				</div>
+				<div class="app-div column column-3">
+					<form id="nameFileForm"><input type="file" id="nameFile"/></form>
+				</div>
+			</div>
 		</div>
+		<input type="file" id="csvFile" style="display:none" multiple/>
 		<div id="dropZone" class="app-div">
 			<p>Click to upload<br>Attendance (.csv)</p>
 		</div>

@@ -96,3 +96,18 @@ div.app-div input {
     font-family: inherit !important;
     font-size  : inherit !important;
 }
+
+#nameFile {
+    width: 85%;
+    float: right;
+}
+
+#clearNameFile {
+    cursor   : pointer;
+    font-size: small;
+    color    : #850000;
+}
+
+#clearNameFile:hover {
+    text-decoration: underline;
+}
