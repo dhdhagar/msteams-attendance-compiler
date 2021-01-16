@@ -60,10 +60,18 @@ function readCSV(file) {
     });
 }
 
+function returnDateObj(dateStr) {
+    // INFO: Current MS Teams format is "DD/MM/YYYY, HH:MM:SS"
+    let strArr = dateStr.split(`,`);
+    let dateArr = strArr[0].split(`/`);
+    let modDateStr = `${dateArr[1]}/${dateArr[0]}/${dateArr[2]},${strArr[1]}`
+    return new Date(modDateStr);
+}
+
 function analyzeCSV(data, inputs) {
     return new Promise((resolve, reject) => {
         try {
-            let classStartTime = new Date(data[0][`Timestamp`]);
+            let classStartTime = returnDateObj(data[0][`Timestamp`]);
             classStartTime.setHours(inputs.startTime.hours);
             classStartTime.setMinutes(inputs.startTime.minutes);
             let classEndTime = new Date(classStartTime);
@@ -119,12 +127,12 @@ function analyzeCSV(data, inputs) {
                             duration = 0;
 
                             if (rowUserAction === `Joined`) {
-                                if (new Date(rowTimestamp) < new Date(classStartTime)) {
+                                if (returnDateObj(rowTimestamp) < new Date(classStartTime)) {
                                     joiningTime = new Date(classStartTime);
                                     startTime = new Date(classStartTime);
                                 } else {
-                                    joiningTime = new Date(rowTimestamp);
-                                    startTime = new Date(rowTimestamp);
+                                    joiningTime = returnDateObj(rowTimestamp);
+                                    startTime = returnDateObj(rowTimestamp);
                                 }
                                 // duration = (endTime - startTime) / (1000 * 60); // In minutes
                             } else if (rowUserAction === `Joined before`) {
@@ -143,18 +151,18 @@ function analyzeCSV(data, inputs) {
                                 endTime = new Date(classEndTime);
                                 // duration = (endTime - startTime) / (1000 * 60); // In minutes
                             } else if (rowUserAction === `Left`) {
-                                if (new Date(rowTimestamp) < joiningTime) {
+                                if (returnDateObj(rowTimestamp) < joiningTime) {
                                     // duration = 0;
                                     endTime = new Date(joiningTime);
                                 } else {
-                                    endTime = new Date(rowTimestamp);
+                                    endTime = returnDateObj(rowTimestamp);
                                 }
                             } else if (rowUserAction === `Joined`) {
-                                if (new Date(rowTimestamp) < new Date(classStartTime)) {
+                                if (returnDateObj(rowTimestamp) < new Date(classStartTime)) {
                                     endTime = new Date(classEndTime);
                                 } else {
                                     duration += (endTime - startTime) / (1000 * 60)
-                                    startTime = new Date(rowTimestamp);
+                                    startTime = returnDateObj(rowTimestamp);
                                     endTime = new Date(classEndTime);
                                 }
                             }
@@ -184,7 +192,7 @@ function downloadCSV(resultsArray, studentNames) {
         let startTime = resultsArray[0].startTime;
         let csvContent = $.csv.fromObjects(obj);
         let csvResult = "data:text/csv;charset=utf-8," + csvContent;
-        let classDateTime = new Date(obj[0][`Joining Time`]);
+        let classDateTime = returnDateObj(obj[0][`Joining Time`]);
         let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}.csv`;
         encodedUri = encodeURI(csvResult);
         let link = document.createElement("a");
@@ -199,7 +207,7 @@ function downloadCSV(resultsArray, studentNames) {
             let obj = el.results;
             let startTime = el.startTime;
             let csvContent = $.csv.fromObjects(obj);
-            let classDateTime = new Date(obj[0][`Joining Time`]);
+            let classDateTime = returnDateObj(obj[0][`Joining Time`]);
             let classDateTimeStr = `${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}`;
             let fileName = `Attendance ${classDateTimeStr}.csv`;
 
