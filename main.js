@@ -60,11 +60,15 @@ function readCSV(file) {
     });
 }
 
-function returnDateObj(dateStr) {
-    // INFO: Current MS Teams format is "DD/MM/YYYY, HH:MM:SS"
-    let strArr = dateStr.split(`,`);
-    let dateArr = strArr[0].split(`/`);
-    let modDateStr = `${dateArr[1]}/${dateArr[0]}/${dateArr[2]},${strArr[1]}`
+function returnDateObj(dateStr, force = false) {
+    // INFO: Constructs a Date string with "MM/DD/YYYY, HH:MM:SS" format, and then returns a Date object
+    let selectedDateFormat = $("#dateFormatPicker").val(); // INFO: "1": "DD/MM/YYYY", "2": "MM/DD/YYYY"
+    let modDateStr = dateStr;
+    if (force === true || selectedDateFormat === "1") {
+        let strArr = dateStr.split(`,`);
+        let dateArr = strArr[0].split(`/`);
+        modDateStr = `${dateArr[1]}/${dateArr[0]}/${dateArr[2]},${strArr[1]}`
+    }
     return new Date(modDateStr);
 }
 
@@ -96,7 +100,7 @@ function analyzeCSV(data, inputs) {
                 duration += (endTime - startTime) / (1000 * 60);
                 resultCSV.push({
                     'Name': prevName,
-                    'Joining Time': joiningTime.toLocaleString(),
+                    'Joining Time': joiningTime.toLocaleString('en-GB'),
                     'Minutes Attended': Math.ceil(duration),
                     'Attendance': (Math.ceil(duration) >= attendanceThreshold) ? 'P' : 'A'
                 });
@@ -192,7 +196,7 @@ function downloadCSV(resultsArray, studentNames) {
         let startTime = resultsArray[0].startTime;
         let csvContent = $.csv.fromObjects(obj);
         let csvResult = "data:text/csv;charset=utf-8," + csvContent;
-        let classDateTime = returnDateObj(obj[0][`Joining Time`]);
+        let classDateTime = returnDateObj(obj[0][`Joining Time`], force = true);
         let fileName = `Attendance ${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}.csv`;
         encodedUri = encodeURI(csvResult);
         let link = document.createElement("a");
@@ -207,7 +211,7 @@ function downloadCSV(resultsArray, studentNames) {
             let obj = el.results;
             let startTime = el.startTime;
             let csvContent = $.csv.fromObjects(obj);
-            let classDateTime = returnDateObj(obj[0][`Joining Time`]);
+            let classDateTime = returnDateObj(obj[0][`Joining Time`], force = true);
             let classDateTimeStr = `${classDateTime.getDate()}-${classDateTime.getMonth() + 1}-${classDateTime.getFullYear()} ${startTime.hours}${startTime.minutes}`;
             let fileName = `Attendance ${classDateTimeStr}.csv`;
 
